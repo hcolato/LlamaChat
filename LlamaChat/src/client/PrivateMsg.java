@@ -90,9 +90,9 @@ public class PrivateMsg {
 			addWindowListener(new WindowAdapter() {
 				public void windowClosed(WindowEvent e) {
 					MsgWindow cur = (MsgWindow) e.getWindow();
-					Enumeration enum = privates.keys();
-					while (enum.hasMoreElements()) {
-						String user = (String) enum.nextElement();
+					Enumeration enum1 = privates.keys();
+					while (enum1.hasMoreElements()) {
+						String user = (String) enum1.nextElement();
 						MsgWindow tmpFra = (MsgWindow) privates.get(user);
 						if (cur.equals(tmpFra)) {
 							privates.remove(user);
