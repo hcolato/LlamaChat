@@ -38,6 +38,9 @@ import java.awt.Color;
  * This represents the chat pane where chat dialoge takes place
  * @author Joseph Monti <a href="mailto:countjoe@users.sourceforge.net">countjoe@users.sourceforge.net</a>
  * @version 0.8
+ * 
+ * Estara siendo modificado por el grupo #2,
+ * timestamp: 03/05/2014 14:24:00
  */
 public class ChatPane extends JTextPane {
 	
