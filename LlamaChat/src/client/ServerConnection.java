@@ -268,6 +268,18 @@ public class ServerConnection implements Runnable, SocketConnection {
 	public void whisper(String username, String message) {
 		client.recieveWhisper(username, message);
 	}
+
+
+	/**
+	 * recieves a invitation
+	 * @param username	the user sending the invited
+	 * @param message	the message being sent
+	 */
+	public void invite(String username, String message) {
+		client.recieveInvite(username, message);
+	}
+
+
 	/**
 	 * receives notification in change in logging status
 	 * @param start		true when starting logging, false otherwise

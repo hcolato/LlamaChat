@@ -39,6 +39,7 @@ public interface SocketConnection {
 	public void chat(String username, String message);
 	public void private_msg(String username, String message);
 	public void whisper(String username, String message);
+	public void invite(String username, String message);
 	public void chatLog(boolean start);
 	public void error(String s);
 	public void _writeObject(Object obj);

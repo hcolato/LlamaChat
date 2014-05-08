@@ -114,7 +114,7 @@ public class LlamaChat extends JApplet {
 	public String locationURL;
 	private final String linkURL = "http://joe.tgpr.org/LlamaChat";
 	public Hashtable channels;
-	private static final String VERSION = "v0.8";
+	private static final String VERSION = "v0.8.1";
 	public PrivateMsg privates;
 	public boolean showUserStatus;
 	public boolean chanAdmin;
@@ -129,6 +129,7 @@ public class LlamaChat extends JApplet {
 	JComboBox cboChannels;
 	JButton butChannel;
 	JButton butCreate;
+	JButton butInvite;
 	
 	ImageIcon conNo;
 	ImageIcon conYes;
@@ -196,9 +197,16 @@ public class LlamaChat extends JApplet {
 		butCreate = new JButton("Create");
 		butCreate.setToolTipText("Create new channel");
 		butCreate.addActionListener(myAction);
-		butCreate.setBounds(230, 5, 80, 24);
+		butCreate.setBounds(230, 5, 100, 24);
 		butCreate.setEnabled(false);
 		
+
+		butInvite = new JButton("Invite");
+		butInvite.setToolTipText("Invite Friend");
+		butInvite.addActionListener(myAction);
+		butInvite.setBounds(340, 5, 80, 24);
+
+
 		mainChat = new ChatPane(this);
 		textScroller = new JScrollPane(mainChat, 
 								JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
@@ -222,6 +230,7 @@ public class LlamaChat extends JApplet {
 		popup.add("whisper").addActionListener(myAction);
 		popup.add("private message").addActionListener(myAction);
 		popup.add("ignore").addActionListener(myAction);
+		popup.add("not ignore").addActionListener(myAction);
 		popup.add("clear ignore list").addActionListener(myAction);
 		
 		conNo = new ImageIcon(getURL("images/connect_no.gif"));
@@ -247,6 +256,7 @@ public class LlamaChat extends JApplet {
 		c.add(cboChannels);
 		c.add(butChannel);
 		c.add(butCreate);
+                c.add(butInvite);
 		c.add(textScroller);
 		c.add(userScroller);
 		c.add(messageText);
@@ -279,6 +289,7 @@ public class LlamaChat extends JApplet {
 						 "Welcome to LlamaChat " + VERSION + "<br>" +
 						 "If you need assistance, type \\help<br>" +
 						 "Enjoy your stay!<br>" +
+						 "Maestria Aplicada en Redes<br>"+
 						 "==================================<br></font>";
 		HTMLDocument doc = (HTMLDocument) mainChat.getDocument();
 		HTMLEditorKit kit = (HTMLEditorKit) mainChat.getEditorKit();
@@ -346,6 +357,17 @@ public class LlamaChat extends JApplet {
 				server.writeObject(new SD_Channel(true, channel, 
 									("".equals(pass) ? null : pass)));
 				showUserStatus = false;
+			//---------- Invite a Specific User	
+			} else if (ae.getSource() == butInvite) {
+				String invite = JOptionPane.showInputDialog(
+									(Component) ae.getSource(),
+									"Enter the name of the User to Invite",
+									"Invite User",
+									JOptionPane.INFORMATION_MESSAGE);
+				if (invite == null) return;
+                                        messageText.setText("\\invite " + invite);
+					sendMessage();                       
+
 			} else if (cmd == "whisper") {
 				String user = (String)userList.getSelectedValue();
 				if (user != null && !messageText.getText().equals("") && 
@@ -368,6 +390,13 @@ public class LlamaChat extends JApplet {
 				String user = (String)userList.getSelectedValue();
 				if (user != null) {
 					ignore(user, false);
+				} else {
+					error("no user selected");
+				}
+			} else if (ae.getActionCommand().equals("not ignore")) {
+				String user = (String)userList.getSelectedValue();
+				if (user != null) {
+					 not_ignore(user, false);
 				} else {
 					error("no user selected");
 				}
@@ -572,10 +601,12 @@ public class LlamaChat extends JApplet {
 					"\\disconnect \t\t- disconnect from server<br>" +
 					"\\whisper &lt;user&gt; &lt;message&gt; \t- whisper to a user<br>" + 
 					"\\private &lt;user&gt; \t- start a private message session<br>" +
-					"\\ignore &lt;user&gt; \t\t- ignores a user<br>" +
+					"\\ignore &lt;user&gt; \t- ignores a user<br>" +
+					"\\not_ignore &lt;user&gt; \t- not ignores a user<br>" +
 					"\\clearignore \t\t- clear list of ignores<br>" +
 					"\\reconnect \t\t- attempt to reconnect to server<br>" +
-					"\\rename &lt;new name&gt; \t\t- change your username<br>";
+					"\\rename &lt;new name&gt; \t- change your username<br>"+
+					"\\invite &lt;user&gt; \t- invite user to join at your channel<br>";
 			if (admin) {
 				commands += "\\kick &lt;user&gt; \t\t- kick user from room<br>" + 
 							"\\logstart \t\t- start logging sessoin<br>" + 
@@ -628,7 +659,36 @@ public class LlamaChat extends JApplet {
 			sendWhisper(un, message);
 			sendText(username, message, true);
 			return true;
-		} else if (cmd.startsWith("private")) {
+		} else if (cmd.startsWith("invite")) {
+		    String channel = (String) cboChannels.getSelectedItem();
+         	int start = cmd.indexOf(' ');
+			if (start < 0) {
+				error("usage: \\invite &lt;user&gt;");
+				return false;
+			}
+			
+			String un = cmd.substring(start+1);
+			
+				if ((un.length() < 1) || (un.length() > 10) || (!un.matches("[\\w_-]+?")) ) {
+					error(un+" invalid user");
+					return false;
+				}
+				
+				if (username.equals(un)) {
+					error("You cannot invite youself");
+					return false;
+				}
+				
+				if (users.contains(un)) {
+					error(un+"  is already in your Channel");
+					return false;
+				}	
+			String message=un +" has been invited to join a channel "+channel;
+		        sendInvite(un, message);
+			sendText(username, message,false);
+			return true;
+			
+		}else if (cmd.startsWith("private")) {
 			int start = cmd.indexOf(' ');
 			if (start < 0) {
 				error("usage: \\private &lt;user&gt;");
@@ -674,7 +734,15 @@ public class LlamaChat extends JApplet {
 			}
 			ignore(cmd.substring(start+1), false);
 			return true;
-		} else if (cmd.startsWith("join")) {
+		} else if (cmd.startsWith("not_ignore")) {
+			int start = cmd.indexOf(' ');
+			if (start < 0) {
+				error("usage: \\not_ignore &lt;user&gt;");
+				return false;
+			}
+			not_ignore(cmd.substring(start+1), false);
+			return true;
+		}else if (cmd.startsWith("join")) {
 			int start = cmd.indexOf(' ');
 			if (start < 0) {
 				error("usage: \\join &lt;channel&gt; [password]");
@@ -790,6 +858,36 @@ public class LlamaChat extends JApplet {
 		}
 		return true;
 	}
+
+
+
+	/**
+	 * Method to not ignore all incoming messages from a user
+	 * @param i		the user to ignore
+	 * @param quite	if true will not show confirmation
+	 * @return true on succes, false on failure
+	 */
+	private boolean not_ignore(String i, boolean quiet) {
+		if (!users.contains(i)) {
+			if (!quiet) {
+				error("user does not exists");
+			}
+			return false;
+		}
+		if (!ignores.contains(i)) {
+			if (!quiet) {
+				error(i+" is enable");
+			}
+			return false;
+		}
+	        ignores.remove(ignores.indexOf(i));
+		updateList();
+		if (!quiet) {
+			serverMessage(i+" user now is not ignored ");
+		}
+		return true;
+	}
+
 	
 	/**
 	 * Sends a text to the chat window. Parses the message to pick
@@ -829,6 +927,20 @@ public class LlamaChat extends JApplet {
 			server.writeObject(new SD_Whisper(to, message));
 		}
 	}
+	
+	
+	
+	/**
+	 * sends a invite to the server
+	 * @param message	the message to be sent
+	 */
+	private void sendInvite(String to, String message) {
+		if (server != null) {
+			 server.writeObject(new SD_Invite(to, message));
+		}
+	}	
+	
+	
 	
 	/**
 	 * sorts the user list and rebuilds the user list from 
@@ -919,6 +1031,18 @@ public class LlamaChat extends JApplet {
 			sendText(un, message, true);
 		}
 	}
+
+	
+	/**
+	 * Reciving method for a invite
+	 * @param un	the name of the user sending the invitation
+	 * @param message	the message that was sent
+	 */
+	public void recieveInvite(String un, String message) {
+			sendText(un, message, false);
+	}	
+	
+	
 	
 	/**
 	 * Recieving method for private
@@ -982,6 +1106,7 @@ public class LlamaChat extends JApplet {
 			secIcon.setToolTipText("Connection not Secured");
 			butChannel.setEnabled(false);
 			butCreate.setEnabled(false);
+		        butInvite.setEnabled(false);
 		}
 	}
 	

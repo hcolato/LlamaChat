@@ -316,6 +316,27 @@ public class ClientConnection implements Runnable, SocketConnection {
 		}
 	}
 
+
+        /**
+	 * invite to a user
+	 * @param username	the name of the user that the invitation is to be sent
+	 * @param message	the message that is to be invited
+	 */
+	public void invite(String username, String message) {
+		if (finalized) {			
+			if (!server.connectedUsers.containsKey(username)) {
+				writeObject(new SD_Error("The invitation was not sent, username "+username+" not found"));
+			}else{
+				server.sendTo(new SD_Invite(name, message), username);
+			}
+			
+		} else {
+			writeObject(new SD_Error("connection not confirmed"));
+		}
+	}	
+	
+
+
 	/**
 	 * used to control the chat logging status
 	 * @param start		true to start logging, false to stop
